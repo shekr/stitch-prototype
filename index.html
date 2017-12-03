@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<!-- Bootstrap-->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+<!-- Custom -->
+<link rel="stylesheet" href="css/stitch.css"/>
+<style>
+    svg rect {
+        stroke: #888;
+        stroke-width: 1;
+        fill: transparent;
+    }
+</style>
+
+<body>
+    <div id="vis-box">
+        <svg id="vis" xmlns="http://www.w3.org/2000/svg" width="450" height="450" viewBox="0 0 105 105">
+        </svg>
+    </div>
+    
+    <div id="controls">
+        <div class="form-group">
+            <fieldset>
+                <legend>Grid:</legend>
+                <label for="grid-size-x">
+                    <input type="number" id="grid-size-x" name="grid-size">
+                </label> by
+                <label for="grid-size-y">
+                    <input type="number" id="grid-size-y" name="grid-size">
+                </label>
+            </fieldset>
+        </div>
+        <div class="form-group">
+            <fieldset>
+                <legend>Color:</legend>
+                <label for="primary-color">Primary
+                    <input type="color" id="primary-color" value="transparent">
+                </label>
+                <label for="constrast-color">Contrast
+                    <input type="color" id="contrast-color" />
+                </label>
+            </fieldset>
+        </div>
+
+    </div>
+
+    <!-- Bootstrap + Dependencies, incl jQuery -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
+    
+    <!-- App -->
+    <script type="text/javascript">
+
+    function changeColor(e) {
+        e.target.setAttribute("style", "fill: #ff0000");
+    }
+    function dragChangeColor(e) {
+        if (mouseDown) {
+            changeColor(e);
+        }
+    }
+
+    var mouseDown = false;
+    document.addEventListener("mousedown", function() {
+        if (!mouseDown)
+            mouseDown = true;
+    })
+
+    document.addEventListener("mouseup", function() {
+        if (mouseDown)
+            mouseDown = false;
+    })
+
+    for (var i = 0; i < 10; i++) {
+        for (var j = 0; j < 10; j++) {
+            var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect")
+            rect.setAttribute("width", 10);
+            rect.setAttribute("height", 10);
+            rect.addEventListener("click", changeColor);
+            rect.addEventListener("mouseover", dragChangeColor);
+            //calc placement
+            var xLoc = i * 10;
+            var yLoc = j * 10;
+            rect.setAttribute('x', xLoc);
+            rect.setAttribute('y', yLoc);
+            document.getElementById('vis').appendChild(rect);
+        }
+    }
+
+    </script>
+</body>
