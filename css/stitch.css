@@ -4,10 +4,18 @@
     cursor: pointer;
 }
 .label {
-    font-size: 10px;
+    font-size: 5px;
     font-family: Arial, sans-serif;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
 }
+.grid-sizer {
+    width: 50px;
+}
+#preview-box {
+    margin-top: 20px;
+}
+button { margin-left: 10px; }
+fieldset { max-width: 500px; }

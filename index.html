@@ -16,11 +16,12 @@
             <fieldset>
                 <legend>Grid:</legend>
                 <label for="grid-size-x">
-                    <input type="number" id="grid-size-x" name="grid-size">
+                    <input type="number" class="grid-sizer" id="grid-size-x" name="grid-x">
                 </label> by
                 <label for="grid-size-y">
-                    <input type="number" id="grid-size-y" name="grid-size">
+                    <input type="number" class="grid-sizer" id="grid-size-y" name="grid-y">
                 </label>
+                <button id="grid-generator" type="button">Regenerate Grid</button>
             </fieldset>
         </div>
         <div class="form-group">
@@ -37,12 +38,18 @@
         <div class="form-group">
             <fieldset>
                 <legend>Preview:</legend>
+                <label>Repeats X
+                    <input type="number" class="grid-sizer" id="repeats-x">
+                </label>
+                <label>Repeats Y
+                    <input type="number" class="grid-sizer" id="repeats-y">
+                </label>
                 <button id="preview-generator" type="button">Generate Preview</button>
             </fieldset>
         </div>
     </div>
 
-    <div id="preview">
+    <div id="preview-box">
         <svg xmlns="http://www.w3.org/2000/svg" id="vis-preview"></svg>
     </div>
     <!-- Bootstrap + Dependencies, incl jQuery 
@@ -53,8 +60,25 @@
 
     <!-- App -->
     <script type="text/javascript">
+    /* TODO:
+     * add in ability to read query params to input values so can 'save' preferred setup
+     * update color pickers so can put in hex value directly and so displays hex
+     */
+
     var defaultPrimaryColor = "#ffffff";
     var defaultContrastColor = "#000000";
+    var defaultGridX = 10;
+    var defaultGridY = 10;
+    var rectSize = 10;
+    var fontSize = 10;
+    var axisHeight = fontSize;
+    var axisWidth = fontSize + 5;
+    var zoom = 4;
+    var outlineWidth = 1;
+    var viewBoxX;
+    var viewBoxY;
+    var defaultRepeatsX = 3;
+    var defaultRepeatsY = 1;
 
     //Initial setup
     var mouseDown = false;
@@ -77,70 +101,46 @@
     inputPrimaryColor.addEventListener('change', function() { changeColorSet('primary-color') })
     inputContrastColor.addEventListener('change', function() { changeColorSet('contrast-color') })
 
+    var inputGridX = document.getElementById('grid-size-x');
+    var inputGridY = document.getElementById('grid-size-y');
+    
+    inputGridX.value = defaultGridX;
+    inputGridY.value = defaultGridY;
+
+    var inputRepeatX = document.getElementById('repeats-x');
+    var inputRepeatY = document.getElementById('repeats-y');
+
+    inputRepeatX.value = defaultRepeatsX;
+    inputRepeatY.value = defaultRepeatsY;
+
+    var vis = document.getElementById('vis');
+    var preview = document.getElementById('vis-preview');
+
     document.getElementById('preview-generator').addEventListener('click', function(e) {
         e.preventDefault();
         generatePreview();
         return false;
     })
 
-    var axes = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    document.getElementById('grid-generator').addEventListener('click', function(e) {
+        e.preventDefault();
+        reGenerateGrid();
+        return false;
+    })
 
     // Make grid vis
-    for (var i = 0; i < 10; i++) {
-        
-        for (var j = 0; j < 10; j++) {
-            var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect")
-            
-            //calc placement
-            var xBuffer = 0;
-            var yBuffer = 0;
-            var xLoc = i * 10 + xBuffer;
-            var yLoc = j * 10 + yBuffer;
-            var axisHeight = 10;
-            var axisWidth = 10;
-
-            //rectangles
-            rect.setAttribute("width", 10);
-            rect.setAttribute("height", 10);
-            rect.setAttribute('class', 'primary-color')
-            rect.setAttribute('fill', defaultPrimaryColor);
-            rect.addEventListener("mousedown", function(e) {
-                changeColor(e)
-            });
-            rect.addEventListener("mouseover", dragChangeColor);
-            rect.setAttribute('x', xLoc + axisWidth);
-            rect.setAttribute('y', yLoc + axisHeight);
-            document.getElementById('vis').appendChild(rect);
-
-            //y-axis
-            if (i == 0) {
-                var label = document.createElementNS("http://www.w3.org/2000/svg", "text")
-                label.innerHTML = 10- j;
-                label.setAttribute('class', 'label');
-                label.setAttribute('x', xLoc);
-                label.setAttribute('y', yLoc + axisHeight*2);
-                axes.appendChild(label);
-            }
-            //x-axis
-            if (j % 10 == 0) {
-                var label = document.createElementNS("http://www.w3.org/2000/svg", "text")
-                label.innerHTML = 10-i;
-                label.setAttribute('class', 'label');
-                label.setAttribute('x', xLoc + axisWidth + (axisWidth/4));
-                label.setAttribute('y', yLoc + axisHeight);
-                axes.appendChild(label);
-            }
-            
-        }
-    }
-
-    document.getElementById('vis').appendChild(axes); //add last to make them bottom in z-index
+    generateGrid();
 
     /* Functions */
-    function changeColor(e) {
+    function changeColor(e, toggle = false) {
         var block = e.target;
-        var newClass = block.getAttribute('class') == 'primary-color' ? 'contrast-color' : 'primary-color';
-        var newColor = block.getAttribute('class') == 'primary-color' ? inputContrastColor.value : inputPrimaryColor.value;
+        if (toggle) {
+            var newClass = block.getAttribute('class') == 'primary-color' ? 'contrast-color' : 'primary-color';
+            var newColor = block.getAttribute('class') == 'primary-color' ? inputContrastColor.value : inputPrimaryColor.value;
+        } else {
+            newClass = 'contrast-color';
+            newColor = inputContrastColor.value;
+        }
         block.setAttribute('class', newClass);
         e.target.setAttribute("fill", newColor);
     }
@@ -162,26 +162,100 @@
         })
     }
 
+    function reGenerateGrid() {
+        if (confirm('Regenerating the grid will delete all data')) {
+            vis.innerHTML = '';
+            generateGrid();
+        }
+    }
+
+    function generateGrid() {
+        var axes = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        
+        for (var i = 0; i < inputGridX.value ; i++) {
+            for (var j = 0; j < inputGridY.value; j++) {
+                var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect")
+                
+                //calc placement
+                var xLoc = i * rectSize;
+                var yLoc = j * rectSize;
+
+                //rectangles
+                rect.setAttribute("width", rectSize);
+                rect.setAttribute("height", rectSize);
+                rect.setAttribute('class', 'primary-color')
+                rect.setAttribute('fill', defaultPrimaryColor);
+                rect.addEventListener("mousedown", function(e) {
+                    if (e.buttons == 1) //only respond to primary button
+                        changeColor(e, true)
+                });
+                rect.addEventListener("mouseover", function(e) {
+                    if (e.buttons == 1) //only respond to primary button
+                        dragChangeColor(e);
+                });
+                rect.setAttribute('x', xLoc + axisWidth);
+                rect.setAttribute('y', yLoc + outlineWidth);
+                document.getElementById('vis').appendChild(rect);
+
+                //y-axis
+                if (i == 0) {
+                    var label = document.createElementNS("http://www.w3.org/2000/svg", "text")
+                    var labelNum = inputGridY.value - j;
+                    label.innerHTML = labelNum;
+                    var xTextAdditional = calcDigitPadding(labelNum);
+                    label.setAttribute('class', 'label');
+                    label.setAttribute('x', xLoc + xTextAdditional);
+                    label.setAttribute('y', yLoc + fontSize + outlineWidth);
+                    axes.appendChild(label);
+                }
+
+                //x-axis
+                if (j == inputGridY.value - 1) {
+                    var label = document.createElementNS("http://www.w3.org/2000/svg", "text")
+                    var labelNum = inputGridX.value - i;
+                    label.innerHTML = labelNum;
+                    label.setAttribute('class', 'label');
+                    var xTextAdditional = calcDigitPadding(labelNum);
+                    label.setAttribute('x', xLoc + axisWidth + xTextAdditional);
+                    label.setAttribute('y', yLoc + fontSize + axisHeight);
+                    axes.appendChild(label);
+                }
+                
+            }
+        }
+        viewBoxX = inputGridX.value * rectSize + axisWidth + outlineWidth;
+        viewBoxY = inputGridY.value * rectSize + axisHeight + outlineWidth;
+        vis.setAttribute('viewBox', '0 0 ' + viewBoxX + ' ' + viewBoxY);
+        vis.setAttribute('width', inputGridX.value * rectSize * zoom);
+        vis.setAttribute('height', inputGridY.value * rectSize * zoom);
+        vis.appendChild(axes); //add last to make them bottom in z-index
+    }
+
+    function calcDigitPadding(num) {
+        var digits = Math.floor(num/10) + 1;
+        var digitSize = fontSize/3;
+        var noPadding = 2;
+        return xTextAdditional = digits < noPadding ? (noPadding - digits) * digitSize : 0;
+    }
+
     function generatePreview() {
         //remove any old preview first
-        var oldPattern = document.querySelectorAll('#vis-preview g.pattern');
-        console.log(oldPattern);
-        oldPattern.forEach(function(elem) {
-            document.getElementById('vis-preview').removeChild(elem);
-        })
+        preview.innerHTML = '';
 
         var pattern = document.querySelectorAll('#vis rect');
-        var repeats = 10;
-        document.getElementById('vis-preview').setAttribute('width', repeats * 100 + 20)
-        for (var i = 0; i < repeats; i++) {
-            var grouper = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            grouper.setAttribute('class', 'pattern')
-            grouper.setAttribute("transform", "translate(" + i * 100 + ")");
-            pattern.forEach(function(elem) {
-                var cloneNode = elem.cloneNode();
-                grouper.appendChild(cloneNode);
-            })
-            document.getElementById('vis-preview').appendChild(grouper);
+        preview.setAttribute('width', inputRepeatX.value * viewBoxX);
+        preview.setAttribute('height', inputRepeatY.value * viewBoxY);
+        for (var i = 0; i < inputRepeatX.value; i++) {
+            for (var j = 0; j < inputRepeatY.value; j++) {
+                var grouper = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                grouper.setAttribute('class', 'pattern')
+                grouper.setAttribute("transform", "translate(" + i * rectSize * inputGridX.value + "," + j * rectSize * inputGridY.value + ")");
+                pattern.forEach(function(elem) {
+                    var cloneNode = elem.cloneNode();
+                    grouper.appendChild(cloneNode);
+                })
+                preview.appendChild(grouper);
+            }
         }
     }
 
