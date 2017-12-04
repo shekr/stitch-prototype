@@ -1,12 +1,11 @@
-svg rect {
+#vis rect {
     stroke: #888;
     stroke-width: 1;
-    fill: transparent;
+    cursor: pointer;
 }
-svg text {
+.label {
     font-size: 10px;
     font-family: Arial, sans-serif;
-    pointer-events: none;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
