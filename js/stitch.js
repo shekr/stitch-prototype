@@ -7,8 +7,8 @@
 var svgNs = "http://www.w3.org/2000/svg";
 var defaultPrimaryColor = "#ffffff";
 var defaultContrastColor = "#000000";
-var defaultGridX = 10;
-var defaultGridY = 10;
+var defaultGridX = 4;
+var defaultGridY = 4;
 var rectSize = 10;
 var fontSize = 10;
 var axisHeight = fontSize;
@@ -58,15 +58,13 @@ inputRepeatX.value = defaultRepeatsX;
 inputRepeatY.value = defaultRepeatsY;
 
 //grid edit
-var inputGridEditXType = document.getElementById('grid-edit-x');
-var inputGridEditYType = document.getElementById('grid-edit-y');
 var inputGridEditXNum = document.getElementById('grid-edit-x-num');
 var inputGridEditYNum = document.getElementById('grid-edit-y-num');
 var inputGridEditXSide = document.getElementById('grid-edit-x-side');
 var inputGridEditYSide = document.getElementById('grid-edit-y-side');
 
 inputGridEditXNum.value = 0;
-inputGridEditYNum.value = 1;
+inputGridEditYNum.value = -1;
 
 var vis = document.getElementById('vis');
 var preview = document.getElementById('vis-preview');
@@ -145,17 +143,42 @@ function copyGridData(gridSource, gridTarget, targetStartIndex) {
     var targetRows = countGridProp(gridTarget, 'x');
     var rowOffset = targetRows - sourceRows;
     var currRow = 0;
-    for (var i = 0; i < gridSource.children.length; i++) {
-        if ( i !== 0 && i % sourceRows == 0) {
-            currRow++;
+
+    if (rowOffset < 0 ) {
+        var i = Math.abs(rowOffset);
+        while (i < gridSource.children.length) {
+            if (i % sourceRows == 0 ) {
+                currRow++;
+                console.log('newRow!')
+                // skip the offset for that row
+                i += Math.abs(rowOffset);
+            } else {
+                var dataChild = gridSource.children[i];
+                var targetChild = gridTarget.children[targetStartIndex + i + rowOffset*currRow];
+                if (targetChild) {
+                    targetChild.setAttribute('fill', dataChild.getAttribute('fill'));
+                    targetChild.setAttribute('class', dataChild.getAttribute('class'));
+                } else {
+                    return; //stop when source is larger than target
+                }
+                i++;
+            }
+
         }
-        var dataChild = gridSource.children[i];
-        var targetChild = gridTarget.children[targetStartIndex + i + rowOffset*currRow];
-        if (targetChild) {
-            targetChild.setAttribute('fill', dataChild.getAttribute('fill'));
-            targetChild.setAttribute('class', dataChild.getAttribute('class'));
-        } else {
-            return; //stop when source is larger than target
+    } else {
+        //we are adding rows
+        for (var i = 0; i < gridSource.children.length; i++) {
+            if ( i !== 0 && i % sourceRows == 0) {
+                currRow++;
+            }
+            var dataChild = gridSource.children[i];
+            var targetChild = gridTarget.children[targetStartIndex + i + rowOffset*currRow];
+            if (targetChild) {
+                targetChild.setAttribute('fill', dataChild.getAttribute('fill'));
+                targetChild.setAttribute('class', dataChild.getAttribute('class'));
+            } else {
+                return; //stop when source is larger than target
+            }
         }
     }
 }
@@ -285,12 +308,17 @@ function generatePreview() {
 }
 
 function updateGrid() {
-    if (inputGridEditXNum.value > 0 || inputGridEditYNum.value > 0) {
+    if (Math.abs(inputGridEditYNum.value) > inputGridY.value ) {
+        alert('You cannot have negative rows in your grid!')
+        return;
+    }
+    if (inputGridEditXNum.value !== 0 || inputGridEditYNum.value !== 0) {
         var newRows = parseInt(inputGridY.value) + parseInt(inputGridEditYNum.value);
         var newCols = parseInt(inputGridX.value) + parseInt(inputGridEditXNum.value);
         var newGrid = createGrid(newRows, newCols);
         inputGridY.value = newRows;
         inputGridX.value = newCols;
+
         copyGridData(document.getElementById('vis-rectangles'), newGrid, parseInt(inputGridEditYNum.value));
     }
     var axes = createAxes(newRows, newCols)
