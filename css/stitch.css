@@ -1,4 +1,4 @@
-#vis rect {
+rect {
     stroke: #888;
     stroke-width: 1;
     cursor: pointer;
@@ -14,8 +14,17 @@
 .grid-sizer {
     width: 50px;
 }
+.grid-sizer--select {
+    width: 80px;
+}
 #preview-box {
     margin-top: 20px;
 }
 button { margin-left: 10px; }
 fieldset { max-width: 500px; }
+.form-group {
+    margin-top: 16px;
+}
+.form-group-sub {
+    margin-top: 8px;
+}
