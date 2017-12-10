@@ -64,7 +64,7 @@ var inputGridEditXSide = document.getElementById('grid-edit-x-side');
 var inputGridEditYSide = document.getElementById('grid-edit-y-side');
 
 inputGridEditXNum.value = 0;
-inputGridEditYNum.value = -1;
+inputGridEditYNum.value = 0;
 
 var vis = document.getElementById('vis');
 var preview = document.getElementById('vis-preview');
@@ -308,10 +308,14 @@ function generatePreview() {
 }
 
 function updateGrid() {
-    if (Math.abs(inputGridEditYNum.value) > inputGridY.value ) {
-        alert('You cannot have negative rows in your grid!')
+    if (inputGridEditYNum.value < 0 && Math.abs(inputGridEditYNum.value) >= inputGridY.value ) {
+        alert('You cannot have less than 1 row in your grid!')
         return;
     }
+    if (inputGridEditXNum.value < 0 && Math.abs(inputGridEditXNum.value) >= inputGridX.value ) {
+        alert('You cannot have less than 1 column in your grid!')
+        return;
+    } 
     if (inputGridEditXNum.value !== 0 || inputGridEditYNum.value !== 0) {
         var newRows = parseInt(inputGridY.value) + parseInt(inputGridEditYNum.value);
         var newCols = parseInt(inputGridX.value) + parseInt(inputGridEditXNum.value);
